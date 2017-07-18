@@ -1,2 +1,2 @@
 # libinstrument-training
-Training, example and demontration code for libinstrument and related modules
+Training, example and demonstration code for libinstrument and related modules
