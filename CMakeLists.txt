@@ -47,6 +47,10 @@ SET(SRC_ROOT src)
 
 # Source file listings
 
+SET(exception_tracing_SOURCES
+	${SRC_ROOT}/exception_tracing.cpp
+)
+
 SET(stack_tracing_SOURCES
 	${SRC_ROOT}/stack_tracing.cpp
 )
@@ -61,8 +65,13 @@ SET(instrumented_dso_demo_SOURCES
 
 # Target definition
 
+ADD_EXECUTABLE(exception_tracing ${exception_tracing_SOURCES})
 ADD_EXECUTABLE(stack_tracing ${stack_tracing_SOURCES})
 ADD_LIBRARY(instrumented_dso_demo SHARED ${instrumented_dso_demo_SOURCES})
+
+SET_TARGET_PROPERTIES(exception_tracing PROPERTIES
+	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+)
 
 SET_TARGET_PROPERTIES(stack_tracing PROPERTIES
 	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
@@ -80,60 +89,34 @@ LINK_DIRECTORIES(
 	${CMAKE_INSTALL_PREFIX}/lib/modules/libinstrument
 )
 
+TARGET_LINK_LIBRARIES(instrumented_dso_demo instrument)
+
+TARGET_LINK_LIBRARIES(exception_tracing instrument dl bfd pthread instrumented_dso_demo)
+
 TARGET_LINK_LIBRARIES(stack_tracing instrument dl bfd pthread instrumented_dso_demo)
 
 
-# Set definitions (defines through -D options), -f options
+# Set definitions (defines through -D options), -f options, generic options, -W options
+
+ADD_CXX_DEFINITIONS(exception_tracing)
+ADD_CXX_FUNCTION_FLAGS(exception_tracing)
+ADD_CXX_GENERIC_OPTIONS(exception_tracing)
+ADD_CXX_WARNING_FLAGS(exception_tracing)
 
 ADD_CXX_DEFINITIONS(stack_tracing)
 ADD_CXX_FUNCTION_FLAGS(stack_tracing)
+ADD_CXX_GENERIC_OPTIONS(stack_tracing)
+ADD_CXX_WARNING_FLAGS(stack_tracing)
 
 ADD_CXX_DEFINITIONS(instrumented_dso_demo)
 ADD_CXX_FUNCTION_FLAGS(instrumented_dso_demo)
-
-# Generic options
-
-TARGET_COMPILE_OPTIONS(stack_tracing PUBLIC
-	-O2
-	-g
-	-march=native
-	-rdynamic
-	-std=gnu++0x
-)
-
-
-# -W options
-
-TARGET_COMPILE_OPTIONS(stack_tracing PUBLIC
-	-Wall
-	-Wabi
-	-Wcast-align
-	-Wcast-qual
-	-Wclobbered
-	-Wctor-dtor-privacy
-	-Wdisabled-optimization
-	-Wempty-body
-	-Wformat-security
-	-Winit-self
-	-Wlogical-op
-	-Wmissing-field-initializers
-	-Wmissing-include-dirs
-	-Wmissing-noreturn
-	-Wnon-virtual-dtor
-	-Woverlength-strings
-	-Wpacked
-	-Wredundant-decls
-	-Wsign-compare
-	-Wswitch-enum
-	-Wtype-limits
-)
+ADD_CXX_GENERIC_OPTIONS(instrumented_dso_demo)
+ADD_CXX_WARNING_FLAGS(instrumented_dso_demo)
 
 
 # Configuration rules
 
 #CONFIGURE_FILE(${HDR_IN_ROOT}/config_globals.hpp.in ${PROJECT_SOURCE_DIR}/${HDR_ROOT}/config/config_globals.hpp)
-
-#CONFIGURE_FILE(${HDR_IN_ROOT}/instrument.hpp.in ${HDR_IN_ROOT}/instrument.hpp)
 
 
 # Installation rules
@@ -142,16 +125,7 @@ TARGET_COMPILE_OPTIONS(stack_tracing PUBLIC
 
 #INSTALL(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 
-#INSTALL(PROGRAMS bin/vtcolors DESTINATION bin)
-
-#INSTALL(FILES ${PROJECT_BINARY_DIR}/${HDR_IN_ROOT}/instrument.hpp DESTINATION include)
-
-
-#LIST_FILES(etc/*.dict DICTIONARIES)
-
-#INSTALL(FILES ${DICTIONARIES} DESTINATION etc)
-
 
 # Store final variable set
 
-#LIST_VARIABLES(${PROJECT_BINARY_DIR}/${PROJECT_NAME}_variables.txt)
+LIST_VARIABLES(${PROJECT_BINARY_DIR}/${PROJECT_NAME}_variables.txt)

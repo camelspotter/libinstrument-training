@@ -1,124 +1,245 @@
 #include <instrument.hpp>
+#include <csignal>
+#include <sys/wait.h>
 
 using namespace instrument;
 
+/* Use case selector */
 int selector = -1;
-
-
-/**
- * @brief Custom external (not in any namespace) user exception
- */
-class external_user_exception: virtual public exception
-{
-public:
-
-	explicit external_user_exception(const i8 *arg):
-	exception("external user exception: %s", arg)
-	{
-	}
-};
 
 
 namespace instrument_extra {
 
-class user_exception: virtual public exception
-{
-public:
+template <class T>
+void level3(T &, u32 &);
 
-	explicit user_exception(const i8 *arg):
-	exception("user exception: %s", arg)
-	{
-	}
-};
+void*	level0(void *);
+
+/* Dynamic shared object entry point */
+void dso_main(const i8*);
 
 
+/* Usage information console message */
 void usage(i32 argc, i8 **argv)
 {
 	std::cout
-		<< "Usage: " << basename(argv[0]) << " <case selector>"
+		<< " Usage: " << basename(argv[0]) << " <case selector>"
 		<< std::endl
 		<< std::endl
-	
-		<< "\t 0 -> Tracing an std::exception"
-		<< std::endl
-						
-		<< "\t 1 -> Tracing an instrument::exception"
-		<< std::endl
-						
-		<< "\t 2 -> Tracing a custom instrument_extra::user_exception"
-		<< std::endl
-						
-		<< "\t 3 -> Tracing a custom external exception (external_user_exception)"
-		<< std::endl
-						
-		<< "\t 4 -> Tracing a generic throwable"
-		<< std::endl
-						
-		<< "\t 5 -> Tracing an exception thrown from a dynamic shared object"
+
+		<< " The case selector can be one of:"
 		<< std::endl
 		<< std::endl
-						
-		<< "\t For each scenario the exception tracing is executed both in the main "
-		<< "and in a forked thread"
+
+		<< "\t 0. Thread stack tracing"
+		<< std::endl
+		<< std::endl
+
+		<< "\t 1. Process stack trace dump due to signal"
+		<< std::endl
+		<< std::endl
+
+		<< "\t 2. Fork a process to execute scenario 0 in parallel"
+		<< std::endl
+		<< std::endl
+
+		<< "\t 3. List all threads and select one to stack trace"
+		<< std::endl
 		<< std::endl;
 }
 
 
-
-
-
-void level3(const i8 *arg, int flag)
+/*
+ * A signal handler that demonstrates how to dump all simulated call stacks to
+ * the standard error stream when a fatal signal (such as SIGSEGV) is received
+ * or a fatal error has occured. A snapshot of what the process and each of its
+ * threads were executing before the process aborted can prove a valuable debug
+ * tool at runtime, even for release editions of a system
+ */
+void sighandler(i32 signo)
 {
-	if (flag == 0) {
-		throw external_user_exception(arg);
+	if (signo == SIGCHLD) {
+		pid_t pid;
+		i32 status;
+
+		while ( likely((pid = waitpid(-1, &status, WNOHANG)) > 0) ) {
+#if DBG_LEVEL & DBGL_INFO
+			/* If the child process terminated normally */
+			if ( likely(WIFEXITED(status)) ) {
+				i32 code = WEXITSTATUS(status);
+				util::dbg_info("child process %d exited with code %d", pid, code);
+			}
+
+			/* If the child process terminated ubnormally due to a signal */
+			else if ( unlikely(WIFSIGNALED(status)) ) {
+				i32 signo = WTERMSIG(status);
+
+				util::dbg_info(
+					"child process %d terminated due to signal %d (%s)",
+					pid,
+					signo,
+					strsignal(signo)
+				);
+			}
+
+			/* If the child process was stopped due to a signal */
+			else if ( unlikely(WIFSTOPPED(status)) ) {
+				i32 signo = WSTOPSIG(status);
+
+				util::dbg_info(
+					"child process %d suspended due to signal %d (%s)",
+					pid,
+					signo,
+					strsignal(signo)
+				);
+			}
+
+			/* If the child process was made runnable due to a signal */
+			else if ( unlikely(WIFCONTINUED(status)) ) {
+				util::dbg_info("child process %d is runnable", pid);
+			}
+#endif
+		}
+
+		return;
 	}
 
-	else if (flag == 1) {
-		throw user_exception(arg);
+	tracer *iface = tracer::interface();
+	if ( unlikely(iface == NULL) ) {
+		return;
 	}
 
-	else {
-		throw exception("demo exception (%s)", arg);
+	/*
+	 * Explicit thread synchronization is not needed, all instrument::tracer
+	 * public methods are thread safe. This is only done to group the output in an
+	 * atomic operation
+	 */
+	util::lock();
+
+	try {
+		/* Get the dump in an instrument::string buffer */
+		string buf;
+		iface->dump(buf);
+
+		util::dbg_warn("caught signal %d (%s)", signo, strsignal(signo));
+
+		std::cerr << std::endl
+							<< "-- Notice! Call stack dump (all threads) follows --"
+							<< std::endl
+							<< std::endl
+							<< buf
+							<< std::endl
+							<< "-- Notice! Call stack dump end --"
+							<< std::endl
+							<< std::endl;
 	}
+	catch (exception &x) {
+		std::cerr << x;
+	}
+	catch (std::exception &x)	{
+		std::cerr << x;
+	}
+
+	if ( likely(signo == SIGINT) ) {
+		std::cerr << "press enter or interrupt (ctrl+c)..."
+							<< std::endl;
+	}
+
+	util::unlock();
 }
 
 
-void level2(const i8 *arg)
-{
-	level3(arg, selector);
-}
-
-
-void level1(const i8 *arg)
-{
-	level2(arg);
-}
-
-
-void* level0(void *arg)
+/* Register handlers for SIGINT and SIGCHLD */
+void register_signal_handlers()
 {
 	tracer *iface = tracer::interface();
 	if ( unlikely(iface == NULL) ) {
-		return NULL;
+		return;
 	}
 
 	try {
-		level1(static_cast<i8*> (arg));
+		struct sigaction action;
+		action.sa_handler = sighandler;
+		action.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+		sigfillset(&action.sa_mask);
+
+		i32 retval = sigaction(SIGINT, &action, NULL);
+		if ( unlikely(retval < 0) ) {
+			throw exception(
+				"failed to register handler for signal %d (%s) (errno %d - %s)",
+				SIGINT,
+				strsignal(SIGINT),
+				errno,
+				strerror(errno)
+			);
+		}
+
+		retval = sigaction(SIGCHLD, &action, NULL);
+		if ( unlikely(retval < 0) ) {
+			throw exception(
+				"failed to register handler for signal %d (%s) (errno %d - %s)",
+				SIGCHLD,
+				strsignal(SIGCHLD),
+				errno,
+				strerror(errno)
+			);
+		}
 	}
 	catch (exception &x) {
 		std::cerr << x
-							<< "\r\n"
+							<< std::endl
 							<< *iface
-							<< "\r\n";
+							<< std::endl;
 	}
-	catch (std::exception &x) {
-		std::cerr << x
-							<< "\r\n"
-							<< *iface
-							<< "\r\n";
-	}
+}
 
-	return arg;
+
+void level4(const i8 *id, volatile u64 *desc, void (*cb)(double) = NULL)
+{
+	pid_t pid;
+
+	switch (*desc) {
+	case 0:
+		break;
+
+	case 1:
+		break;
+
+	case 2:
+			pid = fork();
+
+			if (pid != 0) {
+				util::dbg_info("parent sleeps");
+				sigpause(SIGCHLD);
+				util::dbg_info("parent exits");
+			}
+
+			else {
+				util::dbg_info("child sleeps");
+				sleep(1);
+				execl("./exception_tracing 0", "exception_tracing", NULL);
+				util::dbg_info("child exits");
+			}
+
+			break;
+
+	case 3:
+		break;
+	}
+}
+
+
+void level2(const i8 *id, u16 desc)
+{
+	string tmp(id);
+	u32 arg = desc;
+	level3<string>(tmp, arg);
+}
+
+
+void level1(const i8 *id, u8 desc)
+{
+	level2(id, desc);
 }
 
 
@@ -130,10 +251,13 @@ i32 main(i32 argc, i8 **argv)
 {
 	util::init(argc, argv);
 
-	if (argc != 2 || (selector = atoi(argv[1])) < 0 || selector > 5) {
+	if (argc != 2 || (selector = atoi(argv[1])) < 0 || selector > 3) {
 		usage(argc, argv);
 		exit(EXIT_FAILURE);
 	}
+
+	/* Register handlers for SIGINT and SIGCHLD */
+	register_signal_handlers();
 
 	/*
 	 * The interface object is ready right after process initialization. It may be
@@ -145,11 +269,16 @@ i32 main(i32 argc, i8 **argv)
 		return EXIT_FAILURE;
 	}
 
+	/* Create and start a new thread */
+	string arg("test_arg_1::<%d", getpid());
+	iface->proc()
+			 ->fork_thread("thread-1", level0, (void*) arg.cstring());
+
 	/*
 	 * Catch and handle an exception. If you need libinstrument to produce the
 	 * stack trace for the exception you need to either feed the interface tracer
-	 * object to an output stream, or call tracer::trace to get the trace (into
-	 * a instrument::string object or any of its subclasses) and process it
+	 * object to an output stream, or call tracer::trace to get the trace (into an
+	 * instrument::string object or any of its subclasses) and process it
 	 */
 	const i8 *nm = NULL;
 	try {
@@ -162,22 +291,22 @@ i32 main(i32 argc, i8 **argv)
 				 ->set_name("main");
 
 		nm = util::executable_path();
-		level1(basename(nm));
+		level1(basename(nm), selector);
 	}
 	catch (exception &x) {
 		std::cerr << x
-							<< "\r\n"
+							<< std::endl
 							<< *iface
-							<< "\r\n";
+							<< std::endl;
 	}
 	catch (std::exception &x) {
 		try {
 			string buf;
 			iface->trace(buf);
 			std::cerr << x
-								<< "\r\n"
+								<< std::endl
 								<< buf
-								<< "\r\n";
+								<< std::endl;
 		}
 
 		/*
@@ -202,15 +331,12 @@ i32 main(i32 argc, i8 **argv)
 	 */
 	iface->unwind();
 
-	iface->proc()
-			 ->fork_thread("thread-1", level0, (void*) "test_arg_1");
-
 	thread *t =
 		iface->proc()
 				 ->get_thread("thread-1");
 
 	iface->proc()
-			 ->thread_join(t);
+			 ->thread_join(t, NULL);
 
 	delete[] nm;
 	return EXIT_SUCCESS;
@@ -219,5 +345,53 @@ i32 main(i32 argc, i8 **argv)
 #ifdef __cplusplus
 }
 #endif
+
+
+
+
+
+
+
+
+template <class T>
+void level3(T &id, u32 &desc)
+{
+	u64 arg = desc;
+	level4(id.cstring(), &arg);
+}
+
+
+void*	level0(void *arg)
+{
+	tracer *iface = tracer::interface();
+	if ( unlikely(iface == NULL) ) {
+		return NULL;
+	}
+
+	const i8 *nm = NULL;
+	sleep(1);
+	try {
+		nm = util::executable_path();
+		level1(nm, selector);
+	}
+	catch (exception &x) {
+		std::cerr << x
+							<< "\r\n"
+							<< *iface
+							<< "\r\n";
+	}
+	catch (std::exception &x) {
+		std::cerr << x
+							<< "\r\n"
+							<< *iface
+							<< "\r\n";
+	}
+
+	std::cerr << "press enter or interrupt (ctrl+c)...\n";
+	std::cin.get();
+
+	delete[] nm;
+	return NULL;
+}
 
 }

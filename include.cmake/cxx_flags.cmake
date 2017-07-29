@@ -47,3 +47,73 @@ FUNCTION(ADD_CXX_FUNCTION_FLAGS TARGET_ARG)
 	)
 
 ENDFUNCTION(ADD_CXX_FUNCTION_FLAGS)
+
+
+# Add generic options to a target
+
+FUNCTION(ADD_CXX_GENERIC_OPTIONS TARGET_ARG)
+
+	TARGET_COMPILE_OPTIONS(${TARGET_ARG} PUBLIC
+		-O2
+
+		-g
+
+		-march=native
+
+		-rdynamic
+
+		-std=gnu++0x
+	)
+
+ENDFUNCTION(ADD_CXX_GENERIC_OPTIONS)
+
+
+# Add -W family flags to a target
+
+FUNCTION(ADD_CXX_WARNING_FLAGS TARGET_ARG)
+
+	TARGET_COMPILE_OPTIONS(${TARGET_ARG} PUBLIC
+		-Wall
+
+		-Wabi
+
+		-Wcast-align
+
+		-Wcast-qual
+
+		-Wclobbered
+
+		-Wctor-dtor-privacy
+
+		-Wdisabled-optimization
+
+		-Wempty-body
+
+		-Wformat-security
+
+		-Winit-self
+
+		-Wlogical-op
+
+		-Wmissing-field-initializers
+
+		-Wmissing-include-dirs
+
+		-Wmissing-noreturn
+
+		-Wnon-virtual-dtor
+
+		-Woverlength-strings
+
+		-Wpacked
+
+		-Wredundant-decls
+
+		-Wsign-compare
+
+		-Wswitch-enum
+
+		-Wtype-limits
+	)
+
+ENDFUNCTION(ADD_CXX_WARNING_FLAGS)
