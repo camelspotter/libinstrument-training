@@ -43,7 +43,7 @@ void usage(i32 argc, i8 **argv)
 		<< " Usage: " << basename(argv[0]) << " <case selector>"
 		<< std::endl
 		<< std::endl
-	
+
 		<< " The case selector can be one of:"
 		<< std::endl
 		<< std::endl
@@ -51,27 +51,27 @@ void usage(i32 argc, i8 **argv)
 		<< "\t 0. Tracing an std::exception"
 		<< std::endl
 		<< std::endl
-						
+
 		<< "\t 1. Tracing an instrument::exception"
 		<< std::endl
 		<< std::endl
-						
+
 		<< "\t 2. Tracing a custom instrument_extra::user_exception"
 		<< std::endl
 		<< std::endl
-						
+
 		<< "\t 3. Tracing a custom external exception (external_user_exception)"
 		<< std::endl
 		<< std::endl
-						
+
 		<< "\t 4. Tracing a generic throwable"
 		<< std::endl
 		<< std::endl
-						
+
 		<< "\t 5. Tracing an exception thrown from a dynamic shared object"
 		<< std::endl
 		<< std::endl
-						
+
 		<< " For each case scenario the exception tracing is executed both in the"
 		<< " main and in a forked thread."
 		<< std::endl
@@ -79,7 +79,7 @@ void usage(i32 argc, i8 **argv)
 }
 
 
-/* Stack level 3 (lowest) function */ 
+/* Stack level 3 (lowest) function */
 void level3(const i8 *arg, int flag)
 {
 	switch (flag) {
@@ -88,7 +88,7 @@ void level3(const i8 *arg, int flag)
 
 	case 1:
 		throw exception("instrument::exception: %s", arg);
-		
+
 	case 2:
 		throw user_exception(arg);
 
@@ -128,20 +128,22 @@ void* level0(void *arg)
 		level1(static_cast<i8*> (arg));
 	}
 	catch (exception &x) {
-		std::cerr << x
-							<< "\r\n"
+		std::cerr	<< x
+							<< std::endl
 							<< *iface
-							<< "\r\n";
+							<< std::endl;
 	}
 	catch (std::exception &x) {
-		std::cerr << x
-							<< "\r\n"
+		std::cerr	<< x
+							<< std::endl
 							<< *iface
-							<< "\r\n";
+							<< std::endl;
 	}
 	catch (...) {
-		std::cerr << *iface
-							<< "\r\n";
+		util::dbg_warn("Generic throwable caught");
+		std::cerr	<< std::endl
+							<< *iface
+							<< std::endl;
 	}
 
 	return arg;
@@ -191,7 +193,7 @@ i32 main(i32 argc, i8 **argv)
 		level1(basename(nm));
 	}
 	catch (exception &x) {
-		std::cerr << x
+		std::cerr	<< x
 							<< std::endl
 							<< *iface
 							<< std::endl;
@@ -200,7 +202,7 @@ i32 main(i32 argc, i8 **argv)
 		try {
 			string buf;
 			iface->trace(buf);
-			std::cerr << x
+			std::cerr	<< x
 								<< std::endl
 								<< buf
 								<< std::endl;
@@ -219,8 +221,10 @@ i32 main(i32 argc, i8 **argv)
 		}
 	}
 	catch (...) {
-		std::cerr << *iface
-							<< "\r\n";
+		util::dbg_warn("Generic throwable caught");
+		std::cerr	<< std::endl
+							<< *iface
+							<< std::endl;
 	}
 
 	/*

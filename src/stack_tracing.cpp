@@ -10,11 +10,6 @@ int selector = -1;
 
 namespace instrument_extra {
 
-template <class T>
-void level3(T &, u32 &);
-
-void*	level0(void *);
-
 /* Dynamic shared object entry point */
 void dso_main(const i8*);
 
@@ -123,11 +118,13 @@ void sighandler(i32 signo)
 
 		util::dbg_warn("caught signal %d (%s)", signo, strsignal(signo));
 
-		std::cerr << std::endl
+		std::cout	<< std::endl
 							<< "-- Notice! Call stack dump (all threads) follows --"
 							<< std::endl
 							<< std::endl
+
 							<< buf
+
 							<< std::endl
 							<< "-- Notice! Call stack dump end --"
 							<< std::endl
@@ -138,11 +135,6 @@ void sighandler(i32 signo)
 	}
 	catch (std::exception &x)	{
 		std::cerr << x;
-	}
-
-	if ( likely(signo == SIGINT) ) {
-		std::cerr << "press enter or interrupt (ctrl+c)..."
-							<< std::endl;
 	}
 
 	util::unlock();
@@ -186,7 +178,7 @@ void register_signal_handlers()
 		}
 	}
 	catch (exception &x) {
-		std::cerr << x
+		std::cerr	<< x
 							<< std::endl
 							<< *iface
 							<< std::endl;
@@ -197,31 +189,42 @@ void register_signal_handlers()
 void level4(const i8 *id, volatile u64 *desc, void (*cb)(double) = NULL)
 {
 	pid_t pid;
+	string buf;
+
+	tracer *iface = tracer::interface();
+	if ( unlikely(iface == NULL) ) {
+		return;
+	}
 
 	switch (*desc) {
 	case 0:
+		dso_main(id);
 		break;
 
 	case 1:
+		std::cout << "Waiting for interrupt (ctrl+c)..."
+							<< std::endl;
+
+		sigpause(SIGINT);
 		break;
 
 	case 2:
-			pid = fork();
+		pid = fork();
 
-			if (pid != 0) {
-				util::dbg_info("parent sleeps");
-				sigpause(SIGCHLD);
-				util::dbg_info("parent exits");
-			}
+		if (pid != 0) {
+			util::dbg_info("parent sleeps");
+			sigpause(SIGCHLD);
+			util::dbg_info("parent exits");
+		}
 
-			else {
-				util::dbg_info("child sleeps");
-				sleep(1);
-				execl("./exception_tracing 0", "exception_tracing", NULL);
-				util::dbg_info("child exits");
-			}
+		else {
+			util::dbg_info("child sleeps");
+			sleep(1);
+			execl("./exception_tracing 0", "exception_tracing", NULL);
+			util::dbg_info("child exits");
+		}
 
-			break;
+		break;
 
 	case 3:
 		break;
@@ -229,10 +232,19 @@ void level4(const i8 *id, volatile u64 *desc, void (*cb)(double) = NULL)
 }
 
 
+template <class T>
+void level3(T &id, u32 &desc)
+{
+	u64 arg = desc;
+	level4(id.cstring(), &arg);
+}
+
+
 void level2(const i8 *id, u16 desc)
 {
 	string tmp(id);
 	u32 arg = desc;
+
 	level3<string>(tmp, arg);
 }
 
@@ -240,6 +252,37 @@ void level2(const i8 *id, u16 desc)
 void level1(const i8 *id, u8 desc)
 {
 	level2(id, desc);
+}
+
+
+void*	level0(void *arg)
+{
+	tracer *iface = tracer::interface();
+	if ( unlikely(iface == NULL) ) {
+		return NULL;
+	}
+
+	const i8 *nm = NULL;
+	try {
+		sleep(1);
+		nm = util::executable_path();
+		level1(nm, selector);
+	}
+	catch (exception &x) {
+		std::cerr << x
+							<< std::endl
+							<< *iface
+							<< std::endl;
+	}
+	catch (std::exception &x) {
+		std::cerr << x
+							<< std::endl
+							<< *iface
+							<< std::endl;
+	}
+
+	delete[] nm;
+	return NULL;
 }
 
 
@@ -345,53 +388,5 @@ i32 main(i32 argc, i8 **argv)
 #ifdef __cplusplus
 }
 #endif
-
-
-
-
-
-
-
-
-template <class T>
-void level3(T &id, u32 &desc)
-{
-	u64 arg = desc;
-	level4(id.cstring(), &arg);
-}
-
-
-void*	level0(void *arg)
-{
-	tracer *iface = tracer::interface();
-	if ( unlikely(iface == NULL) ) {
-		return NULL;
-	}
-
-	const i8 *nm = NULL;
-	sleep(1);
-	try {
-		nm = util::executable_path();
-		level1(nm, selector);
-	}
-	catch (exception &x) {
-		std::cerr << x
-							<< "\r\n"
-							<< *iface
-							<< "\r\n";
-	}
-	catch (std::exception &x) {
-		std::cerr << x
-							<< "\r\n"
-							<< *iface
-							<< "\r\n";
-	}
-
-	std::cerr << "press enter or interrupt (ctrl+c)...\n";
-	std::cin.get();
-
-	delete[] nm;
-	return NULL;
-}
 
 }
