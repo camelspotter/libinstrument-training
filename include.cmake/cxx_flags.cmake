@@ -25,6 +25,21 @@ ENDFUNCTION(ADD_CXX_DEFINITIONS)
 FUNCTION(ADD_CXX_FUNCTION_FLAGS TARGET_ARG)
 
 	TARGET_COMPILE_OPTIONS(${TARGET_ARG} PUBLIC
+		-fno-enforce-eh-specs
+
+		-fPIC
+
+		-fstrict-aliasing
+	)
+
+ENDFUNCTION(ADD_CXX_FUNCTION_FLAGS)
+
+
+# Add -finstrument family flags to a target
+
+FUNCTION(ADD_CXX_INSTRUMENTATION_FLAGS TARGET_ARG)
+
+	TARGET_COMPILE_OPTIONS(${TARGET_ARG} PUBLIC
 		-finstrument-functions
 
 		-finstrument-functions-exclude-file-list=/usr/include
@@ -38,15 +53,9 @@ FUNCTION(ADD_CXX_FUNCTION_FLAGS TARGET_ARG)
 		-finstrument-functions-exclude-file-list=ostream
 
 		-finstrument-functions-exclude-file-list=${CMAKE_INSTALL_PREFIX}/include/instrument
-
-		-fno-enforce-eh-specs
-
-		-fPIC
-
-		-fstrict-aliasing
 	)
 
-ENDFUNCTION(ADD_CXX_FUNCTION_FLAGS)
+ENDFUNCTION(ADD_CXX_INSTRUMENTATION_FLAGS)
 
 
 # Add generic options to a target

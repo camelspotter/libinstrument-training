@@ -3,7 +3,7 @@
 using namespace instrument;
 
 /* Use case selector */
-int selector = -1;
+i32 selector = -1;
 
 
 /* Custom external (not in any namespace) user exception */
@@ -156,6 +156,11 @@ extern "C" {
 
 i32 main(i32 argc, i8 **argv)
 {
+	/*
+	 * Parse the command line arguments, store the ones that are related with the
+	 * libinstrument library (prefixed with --instrument-) to the runtime
+	 * configuration list and remove them from argv
+	 */
 	util::init(argc, argv);
 
 	if (argc != 2 || (selector = atoi(argv[1])) < 0 || selector > 5) {

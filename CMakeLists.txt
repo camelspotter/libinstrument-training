@@ -47,6 +47,10 @@ SET(SRC_ROOT src)
 
 # Source file listings
 
+SET(aop_interceptor_SOURCES
+	${SRC_ROOT}/aop_interceptor.cpp
+)
+
 SET(exception_tracing_SOURCES
 	${SRC_ROOT}/exception_tracing.cpp
 )
@@ -55,8 +59,16 @@ SET(stack_tracing_SOURCES
 	${SRC_ROOT}/stack_tracing.cpp
 )
 
+SET(trace_logging_SOURCES
+	${SRC_ROOT}/trace_logging.cpp
+)
+
 SET(instrumented_dso_demo_SOURCES
 	${SRC_ROOT}/instrumented_dso_demo.cpp
+)
+
+SET(mod_test_SOURCES
+	${SRC_ROOT}/mod_test.cpp
 )
 
 
@@ -65,9 +77,18 @@ SET(instrumented_dso_demo_SOURCES
 
 # Target definition
 
+ADD_EXECUTABLE(aop_interceptor ${aop_interceptor_SOURCES})
 ADD_EXECUTABLE(exception_tracing ${exception_tracing_SOURCES})
 ADD_EXECUTABLE(stack_tracing ${stack_tracing_SOURCES})
+ADD_EXECUTABLE(trace_logging ${trace_logging_SOURCES})
+
 ADD_LIBRARY(instrumented_dso_demo SHARED ${instrumented_dso_demo_SOURCES})
+ADD_LIBRARY(mod_test SHARED ${mod_test_SOURCES})
+
+
+SET_TARGET_PROPERTIES(aop_interceptor PROPERTIES
+	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+)
 
 SET_TARGET_PROPERTIES(exception_tracing PROPERTIES
 	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
@@ -77,7 +98,15 @@ SET_TARGET_PROPERTIES(stack_tracing PROPERTIES
 	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
 )
 
+SET_TARGET_PROPERTIES(trace_logging PROPERTIES
+	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+)
+
 SET_TARGET_PROPERTIES(instrumented_dso_demo PROPERTIES
+	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+)
+
+SET_TARGET_PROPERTIES(mod_test PROPERTIES
 	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
 )
 
@@ -91,27 +120,53 @@ LINK_DIRECTORIES(
 
 TARGET_LINK_LIBRARIES(instrumented_dso_demo instrument)
 
+TARGET_LINK_LIBRARIES(mod_test instrument)
+
+TARGET_LINK_LIBRARIES(aop_interceptor instrument dl bfd pthread instrumented_dso_demo)
+
 TARGET_LINK_LIBRARIES(exception_tracing instrument dl bfd pthread instrumented_dso_demo)
 
 TARGET_LINK_LIBRARIES(stack_tracing instrument dl bfd pthread instrumented_dso_demo)
 
+TARGET_LINK_LIBRARIES(trace_logging instrument dl bfd pthread instrumented_dso_demo)
+
 
 # Set definitions (defines through -D options), -f options, generic options, -W options
 
+ADD_CXX_DEFINITIONS(aop_interceptor)
+ADD_CXX_FUNCTION_FLAGS(aop_interceptor)
+ADD_CXX_INSTRUMENTATION_FLAGS(aop_interceptor)
+ADD_CXX_GENERIC_OPTIONS(aop_interceptor)
+ADD_CXX_WARNING_FLAGS(aop_interceptor)
+
 ADD_CXX_DEFINITIONS(exception_tracing)
 ADD_CXX_FUNCTION_FLAGS(exception_tracing)
+ADD_CXX_INSTRUMENTATION_FLAGS(exception_tracing)
 ADD_CXX_GENERIC_OPTIONS(exception_tracing)
 ADD_CXX_WARNING_FLAGS(exception_tracing)
 
 ADD_CXX_DEFINITIONS(stack_tracing)
 ADD_CXX_FUNCTION_FLAGS(stack_tracing)
+ADD_CXX_INSTRUMENTATION_FLAGS(stack_tracing)
 ADD_CXX_GENERIC_OPTIONS(stack_tracing)
 ADD_CXX_WARNING_FLAGS(stack_tracing)
 
+ADD_CXX_DEFINITIONS(trace_logging)
+ADD_CXX_FUNCTION_FLAGS(trace_logging)
+ADD_CXX_INSTRUMENTATION_FLAGS(trace_logging)
+ADD_CXX_GENERIC_OPTIONS(trace_logging)
+ADD_CXX_WARNING_FLAGS(trace_logging)
+
 ADD_CXX_DEFINITIONS(instrumented_dso_demo)
 ADD_CXX_FUNCTION_FLAGS(instrumented_dso_demo)
+ADD_CXX_INSTRUMENTATION_FLAGS(instrumented_dso_demo)
 ADD_CXX_GENERIC_OPTIONS(instrumented_dso_demo)
 ADD_CXX_WARNING_FLAGS(instrumented_dso_demo)
+
+ADD_CXX_DEFINITIONS(mod_test)
+ADD_CXX_FUNCTION_FLAGS(mod_test)
+ADD_CXX_GENERIC_OPTIONS(mod_test)
+ADD_CXX_WARNING_FLAGS(mod_test)
 
 
 # Configuration rules

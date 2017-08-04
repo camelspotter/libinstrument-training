@@ -5,7 +5,9 @@
 using namespace instrument;
 
 /* Use case selector */
-int selector = -1;
+i32 selector = -1;
+
+bool is_busy = true;
 
 
 namespace instrument_extra {
@@ -39,6 +41,11 @@ void usage(i32 argc, i8 **argv)
 		<< std::endl
 
 		<< "\t 3. List all threads and select one to stack trace"
+		<< std::endl
+		<< std::endl
+
+		<< " For each case scenario the stack tracing is executed both in the main"
+		<< " and in a forked thread."
 		<< std::endl
 		<< std::endl;
 }
@@ -188,47 +195,134 @@ void register_signal_handlers()
 
 void level4(const i8 *id, volatile u64 *desc, void (*cb)(double) = NULL)
 {
-	pid_t pid;
-	string buf;
-
 	tracer *iface = tracer::interface();
 	if ( unlikely(iface == NULL) ) {
 		return;
 	}
 
-	switch (*desc) {
-	case 0:
+	if (*desc == 0) {
 		dso_main(id);
-		break;
+		return;
+	}
 
-	case 1:
-		std::cout << "Waiting for interrupt (ctrl+c)..."
+	else if (*desc == 1) {
+		std::cout	<< "Waiting for interrupt (ctrl+c)..."
 							<< std::endl;
 
 		sigpause(SIGINT);
-		break;
+		return;
+	}
 
-	case 2:
-		pid = fork();
+	else if (*desc == 2) {
+		pid_t pid = fork();
 
 		if (pid != 0) {
 			util::dbg_info("parent sleeps");
+
 			sigpause(SIGCHLD);
+
 			util::dbg_info("parent exits");
+			return;
 		}
 
+		util::dbg_info("child sleeps");
+
+		string name(iface	->proc()
+										 	->current_thread()
+										 	->name());
+
+		if (name.equals("thread-1")) {
+			execl("./exception_tracing", "exception_tracing", "0", NULL);
+		}
 		else {
-			util::dbg_info("child sleeps");
-			sleep(1);
-			execl("./exception_tracing 0", "exception_tracing", NULL);
-			util::dbg_info("child exits");
+			execl("./stack_tracing", "stack_tracing", "0", NULL);
 		}
 
-		break;
-
-	case 3:
-		break;
+		util::dbg_info("child exits");
+		return;
 	}
+
+	util::lock();
+	u32 count =
+		iface	->proc()
+					->thread_count();
+
+	if ( likely(count > 0) ) {
+		const i8 *name =
+			iface	->proc()
+						->current_thread()
+						->name();
+
+		if ( unlikely(name == NULL) ) {
+			name = "anonymous";
+		}
+
+		std::cout	<< "(from thread '"
+							<< name
+							<< "') Select one of the following threads:"
+							<< std::endl
+							<< std::endl;
+	}
+
+	for (u32 i = 0; i < count; i++) {
+		thread *t =
+			iface	->proc()
+						->get_thread(i);
+
+		const i8 *name = t->name();
+		if ( unlikely(name == NULL) ) {
+			name = "anonymous";
+		}
+
+		std::cout	<< "\t"
+							<< std::dec
+							<< i
+							<< ": "
+							<< name
+							<< " (0x"
+							<< std::hex
+							<< t->handle()
+							<< ")"
+							<< std::endl
+							<< std::endl;
+	}
+
+	if ( unlikely(count <= 0) ) {
+		util::unlock();
+		return;
+	}
+
+	u32 selection;
+	while (true) {
+		std::cout << ":";
+		std::cin >> selection;
+
+		if (selection < count) {
+			break;
+		}
+	}
+
+	thread *t =
+		iface	->proc()
+					->get_thread(selection);
+
+	const i8 *name = t->name();
+	if ( unlikely(name == NULL) ) {
+		name = "anonymous";
+	}
+
+	std::cout	<< "Stack trace of '"
+						<< name
+						<< "':"
+						<< std::endl
+						<< std::endl;
+
+	string buf;
+	iface->trace(buf, t->handle());
+	std::cout	<< buf
+						<< std::endl;
+
+	util::unlock();
 }
 
 
@@ -264,7 +358,6 @@ void*	level0(void *arg)
 
 	const i8 *nm = NULL;
 	try {
-		sleep(1);
 		nm = util::executable_path();
 		level1(nm, selector);
 	}
@@ -286,12 +379,34 @@ void*	level0(void *arg)
 }
 
 
+void busy_sleep(u32 seconds)
+{
+	sleep(seconds);
+}
+
+
+void* busy(void *arg)
+{
+	u32 seconds = 1;
+	while (is_busy) {
+		busy_sleep(seconds++);
+	}
+
+	return NULL;
+}
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 i32 main(i32 argc, i8 **argv)
 {
+	/*
+	 * Parse the command line arguments, store the ones that are related with the
+	 * libinstrument library (prefixed with --instrument-) to the runtime
+	 * configuration list and remove them from argv
+	 */
 	util::init(argc, argv);
 
 	if (argc != 2 || (selector = atoi(argv[1])) < 0 || selector > 3) {
@@ -313,9 +428,21 @@ i32 main(i32 argc, i8 **argv)
 	}
 
 	/* Create and start a new thread */
-	string arg("test_arg_1::<%d", getpid());
+	string arg("test_arg_1::%d", getpid());
 	iface->proc()
 			 ->fork_thread("thread-1", level0, (void*) arg.cstring());
+
+	arg.set("test_arg_2::%d", getpid());
+	iface->proc()
+			 ->fork_thread("thread-2", busy, (void*) arg.cstring());
+
+	thread *t1 =
+		iface->proc()
+				 ->get_thread("thread-1");
+
+	thread *t2 =
+		iface->proc()
+				 ->get_thread("thread-2");
 
 	/*
 	 * Catch and handle an exception. If you need libinstrument to produce the
@@ -374,12 +501,12 @@ i32 main(i32 argc, i8 **argv)
 	 */
 	iface->unwind();
 
-	thread *t =
-		iface->proc()
-				 ->get_thread("thread-1");
+	is_busy = false;
+	iface->proc()
+			 ->thread_cancel(t2);
 
 	iface->proc()
-			 ->thread_join(t, NULL);
+			 ->thread_join(t1, NULL);
 
 	delete[] nm;
 	return EXIT_SUCCESS;
