@@ -71,6 +71,10 @@ SET(mod_test_SOURCES
 	${SRC_ROOT}/mod_test.cpp
 )
 
+SET(mod_callgraph_SOURCES
+	${SRC_ROOT}/mod_callgraph.cpp
+)
+
 
 # Header file listings
 
@@ -84,6 +88,7 @@ ADD_EXECUTABLE(trace_logging ${trace_logging_SOURCES})
 
 ADD_LIBRARY(instrumented_dso_demo SHARED ${instrumented_dso_demo_SOURCES})
 ADD_LIBRARY(mod_test SHARED ${mod_test_SOURCES})
+ADD_LIBRARY(mod_callgraph SHARED ${mod_callgraph_SOURCES})
 
 
 SET_TARGET_PROPERTIES(aop_interceptor PROPERTIES
@@ -110,6 +115,11 @@ SET_TARGET_PROPERTIES(mod_test PROPERTIES
 	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
 )
 
+SET_TARGET_PROPERTIES(mod_callgraph PROPERTIES
+	VERSION ${${PROJECT_NAME}_VERSION_MAJOR}.${${PROJECT_NAME}_VERSION_MINOR}
+)
+
+
 INCLUDE_DIRECTORIES(${CMAKE_INSTALL_PREFIX}/include)
 
 LINK_DIRECTORIES(
@@ -118,9 +128,12 @@ LINK_DIRECTORIES(
 	${CMAKE_INSTALL_PREFIX}/lib/modules/libinstrument
 )
 
+
 TARGET_LINK_LIBRARIES(instrumented_dso_demo instrument)
 
 TARGET_LINK_LIBRARIES(mod_test instrument)
+
+TARGET_LINK_LIBRARIES(mod_callgraph instrument)
 
 TARGET_LINK_LIBRARIES(aop_interceptor instrument dl bfd pthread instrumented_dso_demo)
 
@@ -168,19 +181,39 @@ ADD_CXX_FUNCTION_FLAGS(mod_test)
 ADD_CXX_GENERIC_OPTIONS(mod_test)
 ADD_CXX_WARNING_FLAGS(mod_test)
 
-
-# Configuration rules
-
-#CONFIGURE_FILE(${HDR_IN_ROOT}/config_globals.hpp.in ${PROJECT_SOURCE_DIR}/${HDR_ROOT}/config/config_globals.hpp)
+ADD_CXX_DEFINITIONS(mod_callgraph)
+ADD_CXX_FUNCTION_FLAGS(mod_callgraph)
+ADD_CXX_GENERIC_OPTIONS(mod_callgraph)
+ADD_CXX_WARNING_FLAGS(mod_callgraph)
 
 
 # Installation rules
 
-#INSTALL(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION lib)
+INSTALL(TARGETS aop_interceptor RUNTIME DESTINATION bin)
 
-#INSTALL(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
+INSTALL(TARGETS exception_tracing RUNTIME DESTINATION bin)
+
+INSTALL(TARGETS stack_tracing RUNTIME DESTINATION bin)
+
+INSTALL(TARGETS trace_logging RUNTIME DESTINATION bin)
+
+INSTALL(TARGETS instrumented_dso_demo LIBRARY DESTINATION lib/modules/libinstrument)
+
+INSTALL(TARGETS mod_test LIBRARY DESTINATION lib/modules/libinstrument)
+
+INSTALL(TARGETS mod_callgraph LIBRARY DESTINATION lib/modules/libinstrument)
 
 
 # Store final variable set
 
 LIST_VARIABLES(${PROJECT_BINARY_DIR}/${PROJECT_NAME}_variables.txt)
+
+
+# Install back in sources the installation manifests
+
+INSTALL(FILES ${PROJECT_BINARY_DIR}/compile_commands.json DESTINATION ${PROJECT_SOURCE_DIR}/doc/)
+
+# todo post-install
+# INSTALL(FILES ${PROJECT_BINARY_DIR}/install_manifest.txt DESTINATION ${PROJECT_SOURCE_DIR}/doc/)
+
+INSTALL(FILES ${PROJECT_BINARY_DIR}/libinstrument-training_variables.txt DESTINATION ${PROJECT_SOURCE_DIR}/doc/)

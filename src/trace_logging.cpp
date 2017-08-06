@@ -111,8 +111,13 @@ string* log_to_highlighter(bool is_low_contrast)
 		p->clear();
 
 		if (is_low_contrast) {
+			p	->get_style("number")
+				->set_attr_enabled(style::BOLD, false)
+				 .set_fgcolor(222);
+
 			p	->get_style("keyword")
-				->set_attr_enabled(style::BOLD, false);
+				->set_attr_enabled(style::BOLD, false)
+				 .set_fgcolor(8);
 
 			p	->get_style("scope")
 				->set_attr_enabled(style::BOLD, false);

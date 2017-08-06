@@ -57,7 +57,7 @@ fi
 # Build
 $cmake ../libinstrument-training-1.0/
 make
-# make install
+make install
 
 exit $?
 

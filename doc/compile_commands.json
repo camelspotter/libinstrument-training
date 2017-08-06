@@ -1,0 +1,37 @@
+[
+{
+  "directory": "/devel/libinstrument-training-build-1.0",
+  "command": "/usr/bin/g++   -I/usr/local/include    -fno-enforce-eh-specs -fPIC -fstrict-aliasing -finstrument-functions -finstrument-functions-exclude-file-list=/usr/include -finstrument-functions-exclude-file-list=iostream -finstrument-functions-exclude-file-list=ios -finstrument-functions-exclude-file-list=istream -finstrument-functions-exclude-file-list=ostream -finstrument-functions-exclude-file-list=/usr/local/include/instrument -O2 -g -march=native -rdynamic -std=gnu++0x -Wall -Wabi -Wcast-align -Wcast-qual -Wclobbered -Wctor-dtor-privacy -Wdisabled-optimization -Wempty-body -Wformat-security -Winit-self -Wlogical-op -Wmissing-field-initializers -Wmissing-include-dirs -Wmissing-noreturn -Wnon-virtual-dtor -Woverlength-strings -Wpacked -Wredundant-decls -Wsign-compare -Wswitch-enum -Wtype-limits -o CMakeFiles/stack_tracing.dir/src/stack_tracing.cpp.o -c /devel/libinstrument-training-1.0/src/stack_tracing.cpp",
+  "file": "/devel/libinstrument-training-1.0/src/stack_tracing.cpp"
+},
+{
+  "directory": "/devel/libinstrument-training-build-1.0",
+  "command": "/usr/bin/g++   -I/usr/local/include    -fno-enforce-eh-specs -fPIC -fstrict-aliasing -finstrument-functions -finstrument-functions-exclude-file-list=/usr/include -finstrument-functions-exclude-file-list=iostream -finstrument-functions-exclude-file-list=ios -finstrument-functions-exclude-file-list=istream -finstrument-functions-exclude-file-list=ostream -finstrument-functions-exclude-file-list=/usr/local/include/instrument -O2 -g -march=native -rdynamic -std=gnu++0x -Wall -Wabi -Wcast-align -Wcast-qual -Wclobbered -Wctor-dtor-privacy -Wdisabled-optimization -Wempty-body -Wformat-security -Winit-self -Wlogical-op -Wmissing-field-initializers -Wmissing-include-dirs -Wmissing-noreturn -Wnon-virtual-dtor -Woverlength-strings -Wpacked -Wredundant-decls -Wsign-compare -Wswitch-enum -Wtype-limits -o CMakeFiles/trace_logging.dir/src/trace_logging.cpp.o -c /devel/libinstrument-training-1.0/src/trace_logging.cpp",
+  "file": "/devel/libinstrument-training-1.0/src/trace_logging.cpp"
+},
+{
+  "directory": "/devel/libinstrument-training-build-1.0",
+  "command": "/usr/bin/g++   -I/usr/local/include    -fno-enforce-eh-specs -fPIC -fstrict-aliasing -finstrument-functions -finstrument-functions-exclude-file-list=/usr/include -finstrument-functions-exclude-file-list=iostream -finstrument-functions-exclude-file-list=ios -finstrument-functions-exclude-file-list=istream -finstrument-functions-exclude-file-list=ostream -finstrument-functions-exclude-file-list=/usr/local/include/instrument -O2 -g -march=native -rdynamic -std=gnu++0x -Wall -Wabi -Wcast-align -Wcast-qual -Wclobbered -Wctor-dtor-privacy -Wdisabled-optimization -Wempty-body -Wformat-security -Winit-self -Wlogical-op -Wmissing-field-initializers -Wmissing-include-dirs -Wmissing-noreturn -Wnon-virtual-dtor -Woverlength-strings -Wpacked -Wredundant-decls -Wsign-compare -Wswitch-enum -Wtype-limits -o CMakeFiles/exception_tracing.dir/src/exception_tracing.cpp.o -c /devel/libinstrument-training-1.0/src/exception_tracing.cpp",
+  "file": "/devel/libinstrument-training-1.0/src/exception_tracing.cpp"
+},
+{
+  "directory": "/devel/libinstrument-training-build-1.0",
+  "command": "/usr/bin/g++   -I/usr/local/include    -fno-enforce-eh-specs -fPIC -fstrict-aliasing -finstrument-functions -finstrument-functions-exclude-file-list=/usr/include -finstrument-functions-exclude-file-list=iostream -finstrument-functions-exclude-file-list=ios -finstrument-functions-exclude-file-list=istream -finstrument-functions-exclude-file-list=ostream -finstrument-functions-exclude-file-list=/usr/local/include/instrument -O2 -g -march=native -rdynamic -std=gnu++0x -Wall -Wabi -Wcast-align -Wcast-qual -Wclobbered -Wctor-dtor-privacy -Wdisabled-optimization -Wempty-body -Wformat-security -Winit-self -Wlogical-op -Wmissing-field-initializers -Wmissing-include-dirs -Wmissing-noreturn -Wnon-virtual-dtor -Woverlength-strings -Wpacked -Wredundant-decls -Wsign-compare -Wswitch-enum -Wtype-limits -o CMakeFiles/aop_interceptor.dir/src/aop_interceptor.cpp.o -c /devel/libinstrument-training-1.0/src/aop_interceptor.cpp",
+  "file": "/devel/libinstrument-training-1.0/src/aop_interceptor.cpp"
+},
+{
+  "directory": "/devel/libinstrument-training-build-1.0",
+  "command": "/usr/bin/g++  -Dinstrumented_dso_demo_EXPORTS -I/usr/local/include  -fPIC   -fno-enforce-eh-specs -fPIC -fstrict-aliasing -finstrument-functions -finstrument-functions-exclude-file-list=/usr/include -finstrument-functions-exclude-file-list=iostream -finstrument-functions-exclude-file-list=ios -finstrument-functions-exclude-file-list=istream -finstrument-functions-exclude-file-list=ostream -finstrument-functions-exclude-file-list=/usr/local/include/instrument -O2 -g -march=native -rdynamic -std=gnu++0x -Wall -Wabi -Wcast-align -Wcast-qual -Wclobbered -Wctor-dtor-privacy -Wdisabled-optimization -Wempty-body -Wformat-security -Winit-self -Wlogical-op -Wmissing-field-initializers -Wmissing-include-dirs -Wmissing-noreturn -Wnon-virtual-dtor -Woverlength-strings -Wpacked -Wredundant-decls -Wsign-compare -Wswitch-enum -Wtype-limits -o CMakeFiles/instrumented_dso_demo.dir/src/instrumented_dso_demo.cpp.o -c /devel/libinstrument-training-1.0/src/instrumented_dso_demo.cpp",
+  "file": "/devel/libinstrument-training-1.0/src/instrumented_dso_demo.cpp"
+},
+{
+  "directory": "/devel/libinstrument-training-build-1.0",
+  "command": "/usr/bin/g++  -Dmod_test_EXPORTS -I/usr/local/include  -fPIC   -fno-enforce-eh-specs -fPIC -fstrict-aliasing -O2 -g -march=native -rdynamic -std=gnu++0x -Wall -Wabi -Wcast-align -Wcast-qual -Wclobbered -Wctor-dtor-privacy -Wdisabled-optimization -Wempty-body -Wformat-security -Winit-self -Wlogical-op -Wmissing-field-initializers -Wmissing-include-dirs -Wmissing-noreturn -Wnon-virtual-dtor -Woverlength-strings -Wpacked -Wredundant-decls -Wsign-compare -Wswitch-enum -Wtype-limits -o CMakeFiles/mod_test.dir/src/mod_test.cpp.o -c /devel/libinstrument-training-1.0/src/mod_test.cpp",
+  "file": "/devel/libinstrument-training-1.0/src/mod_test.cpp"
+},
+{
+  "directory": "/devel/libinstrument-training-build-1.0",
+  "command": "/usr/bin/g++  -Dmod_callgraph_EXPORTS -I/usr/local/include  -fPIC   -fno-enforce-eh-specs -fPIC -fstrict-aliasing -O2 -g -march=native -rdynamic -std=gnu++0x -Wall -Wabi -Wcast-align -Wcast-qual -Wclobbered -Wctor-dtor-privacy -Wdisabled-optimization -Wempty-body -Wformat-security -Winit-self -Wlogical-op -Wmissing-field-initializers -Wmissing-include-dirs -Wmissing-noreturn -Wnon-virtual-dtor -Woverlength-strings -Wpacked -Wredundant-decls -Wsign-compare -Wswitch-enum -Wtype-limits -o CMakeFiles/mod_callgraph.dir/src/mod_callgraph.cpp.o -c /devel/libinstrument-training-1.0/src/mod_callgraph.cpp",
+  "file": "/devel/libinstrument-training-1.0/src/mod_callgraph.cpp"
+}
+]

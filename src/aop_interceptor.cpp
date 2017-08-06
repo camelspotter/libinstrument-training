@@ -20,189 +20,55 @@ void usage(i32 argc, i8 **argv)
 		<< std::endl
 		<< std::endl
 
-		<< "\t 0. Log exception trace to file"
+		<< "\t 0. Use mod_test interceptor"
 		<< std::endl
 		<< std::endl
 
-		<< "\t 1. Log exception trace to TCP/IP socket"
+		<< "\t 1. Use mod_callgraph interceptor"
 		<< std::endl
 		<< std::endl
 
-		<< "\t 2. Log exception trace to serial TTY"
-		<< std::endl
-		<< std::endl
-
-		<< "\t 3. Log exception trace to syntax highlighter"
+		<< "\t 2. use inline interceptor"
 		<< std::endl
 		<< std::endl;
 }
 
 
-string* log_to_file(exception*) __attribute((no_instrument_function));
+void load_interceptor() __attribute((no_instrument_function));
 
-string* log_to_file(exception *x)
+void load_interceptor()
 {
 	tracer *iface = tracer::interface();
 	if ( unlikely(iface == NULL) ) {
-		return NULL;
-	}
-
-	string *nm = NULL;
-	string *retval = NULL;
-
-	try {
-		/* Log the trace to a file, with a unique, trace describing name */
-		nm = file::unique_id("%e_%p.trace");
-		file log(nm->cstring());
-
-		/* Add the IDP header that describes the trace */
-		log	.open()
-				.header()
-				.append("exception: %s\n\n", x->msg());
-
-		iface->trace(log);
-		log.append("\n");
-
-		retval = new string(log);
-
-		log	.flush()
-				.close();
-	}
-
-	/*
-	 * In non instrumented code sections, like the above (all called functions are
-	 * not instrumented) you don't need to create stack traces or unwind the
-	 * simulated stack
-	 */
-	catch (exception &x) {
-		std::cerr << x;
-	}
-	catch (std::exception &x) {
-		std::cerr << x;
-	}
-
-	delete nm;
-	return retval;
-}
-
-
-string* log_to_highlighter() __attribute((no_instrument_function));
-
-string* log_to_highlighter()
-{
-	tracer *iface = tracer::interface();
-	if ( unlikely(iface == NULL) ) {
-		return NULL;
+		exit(EXIT_FAILURE);
 	}
 
 	try {
-		parser *p = parser::get_default();
-		p->clear();
+		string path;
 
-		iface->trace(*p);
-		p->append("\n");
-		return p->highlight();
-	}
-	catch (exception &x) {
-		std::cerr << x;
-	}
-	catch (std::exception &x) {
-		std::cerr << x;
-	}
+		switch (selector) {
+		case 0:
+			path.set(
+				"%s/lib/modules/libinstrument/libmod_test.so",
+				util::prefix());
 
-	return NULL;
-}
+			iface->add_plugin(path.cstring(), NULL);
+			break;
 
+		case 1:
+			path.set(
+				"%s/lib/modules/libinstrument/libmod_callgraph.so",
+				util::prefix());
 
-string* log_to_idp_server(exception*) __attribute((no_instrument_function));
+			iface->add_plugin(
+				path.cstring(),
+				"instrument::instrument_extra::testmod");
 
-string* log_to_idp_server(exception *x)
-{
-	tracer *iface = tracer::interface();
-	if ( unlikely(iface == NULL) ) {
-		return NULL;
-	}
+			break;
 
-	tcp_socket *client = NULL;
-	chain<string> *peer_info = NULL;
-	try {
-		/* Create and configure the IDP client */
-		peer_info = util::getenv("INSTRUMENT_PEER");
-		if ( likely(peer_info == NULL) ) {
-			client = new tcp_socket(NULL);
+		case 2:
+			;
 		}
-
-		else {
-			i32 port = g_idp_port;
-			if ( likely(peer_info->size() > 1) ) {
-				port = atoi(peer_info->at(1)->cstring());
-			}
-
-			client = new tcp_socket(peer_info->at(0)->cstring(), port);
-		}
-
-		client->open();
-		delete peer_info;
-	}
-	catch (exception &err) {
-		std::cerr	<< err
-							<< std::endl
-							<< *iface
-							<< std::endl;
-
-		delete peer_info;
-		return NULL;
-	}
-
-	/* Log the trace to a socket connected to an IDP server */
-	string *retval = NULL;
-	try {
-		/* Add the IDP header that describes the trace */
-		client->header();
-		client->append("exception: %s\n\n", x->msg());
-
-		iface->trace(*client);
-		client->append("\n");
-		retval = new string(*client);
-
-		client->flush();
-		client->close();
-	}
-	catch (exception &x)	{
-		std::cerr << x;
-	}
-	catch (std::exception &x)	{
-		std::cerr << x;
-	}
-
-	delete client;
-	return retval;
-}
-
-
-string* log_to_stty(exception*) __attribute((no_instrument_function));
-
-string* log_to_stty(exception *x)
-{
-	tracer *iface = tracer::interface();
-	if ( unlikely(iface == NULL) ) {
-		return NULL;
-	}
-
-	string *retval = NULL;
-
-	try {
-		stty tty("/dev/ttyS0", 115200);
-		tty	.open()
-				.header()
-				.append("exception: %s\n\n", x->msg());
-
-		iface->trace(tty);
-		tty.append("\n");
-		retval = new string(tty);
-
-		tty	.flush()
-				.close();
 	}
 	catch (exception &x) {
 		std::cerr << x;
@@ -210,43 +76,51 @@ string* log_to_stty(exception *x)
 	catch (std::exception &x) {
 		std::cerr << x;
 	}
-
-	return retval;
 }
 
 
-/* Dynamic shared object entry point */
-void dso_main(const i8*);
+void level1(i32);
 
-
-/* Stack level 3 (lowest) function */
-void level4(const i8 *arg, volatile u64 *desc, void (*cb)(double) = NULL)
+void level4(i32 i)
 {
-	dso_main(arg);
+	if ( unlikely(((i / 4) % 2) == 0) ) {
+		level1(--i);
+	}
 }
 
 
-template <class T>
-void level3(T &id, u32 &desc)
+void level3(i32 i)
 {
-	u64 arg = desc;
-	level4(id.cstring(), &arg);
+	if ( likely((i % 3) == 0) ) {
+		return;
+	}
+
+	level4(i);
 }
 
 
-void level2(const i8 *id, u16 desc)
+void level2(i32 i)
 {
-	string tmp(id);
-	u32 arg = desc;
+	if ( likely(((i / 2) % 2) == 0) ) {
+		return;
+	}
 
-	level3<string>(tmp, arg);
+	level3(i);
+	level4(i);
 }
 
 
-void level1(const i8 *id, u8 desc)
+void level1(i32 i)
 {
-	level2(id, desc);
+	if ( likely((i % 2) == 0) ) {
+		return;
+	}
+
+	level2(i);
+	level3(i);
+	level4(i);
 }
+
 
 
 #ifdef __cplusplus
@@ -262,10 +136,12 @@ i32 main(i32 argc, i8 **argv)
 	 */
 	util::init(argc, argv);
 
-	if (argc != 2 || (selector = atoi(argv[1])) < 0 || selector > 3) {
+	if (argc != 2 || (selector = atoi(argv[1])) < 0 || selector > 2) {
 		usage(argc, argv);
 		exit(EXIT_FAILURE);
 	}
+
+	load_interceptor();
 
 	/*
 	 * The interface object is ready right after process initialization. It may be
@@ -283,7 +159,6 @@ i32 main(i32 argc, i8 **argv)
 	 * object to an output stream, or call tracer::trace to get the trace (into
 	 * a instrument::string object or any of its subclasses) and process it
 	 */
-	const i8 *nm = NULL;
 	try {
 		/*
 		 * Set the thread name for easy identification. This should better be set in
@@ -293,42 +168,23 @@ i32 main(i32 argc, i8 **argv)
 				 ->current_thread()
 				 ->set_name("main");
 
-		nm = util::executable_path();
-		level1(basename(nm), selector);
+		srand(time(NULL) + selector);
+		i32 times = rand() % 9;
+		if ( unlikely(times == 0) ) {
+			times = 1;
+		}
+
+		std::cout << times << std::endl;
+		for (i32 i = 0; likely(i < times); i++) {
+			level1(i);
+			level2(i);
+			level3(i);
+			level4(i);
+		}
 	}
 	catch (exception &x) {
-		string *trace = NULL;
-
-		switch (selector) {
-		case 0:
-			trace = log_to_file(&x);
-			break;
-
-		case 1:
-			trace = log_to_idp_server(&x);
-			break;
-
-		case 2:
-			trace = log_to_stty(&x);
-			break;
-
-		case 3:
-			trace = log_to_highlighter();
-		}
-
-		if ( likely(trace != NULL) ) {
-			std::cerr	<< x
-								<< std::endl
-								<< *trace;
-
-			delete trace;
-		}
 	}
 	catch (...) {
-		util::dbg_warn("Generic throwable caught");
-		std::cerr	<< std::endl
-							<< *iface
-							<< std::endl;
 	}
 
 	/*
@@ -340,7 +196,6 @@ i32 main(i32 argc, i8 **argv)
 	 */
 	iface->unwind();
 
-	delete[] nm;
 	return EXIT_SUCCESS;
 }
 

@@ -4,7 +4,7 @@ using namespace instrument;
 
 namespace instrument_extra {
 
-const i8 *name = "mod_test.so";
+const i8 *name = "libmod_test.so";
 
 
 void mod_load() __attribute((constructor, no_instrument_function));
@@ -52,14 +52,14 @@ void mod_enter(void *this_fn, void *call_site)
 					 ->lookup(addr);
 
 		if ( likely(sym != NULL) ) {
-			string msg("%s: %s called @ %p", name, sym, call_site);
-			util::dbg_info(msg.cstring());
+			string msg("%s: %s called @ %p\n", name, sym, call_site);
+			std::cout << msg;
 		}
 
 		else {
 #ifdef WITH_UNRESOLVED
-			string msg("%s: %p called @ %p", name, this_fn, call_site);
-			util::dbg_info(msg.cstring());
+			string msg("%s: %p called @ %p\n", name, this_fn, call_site);
+			std::cout << msg;
 #endif
 		}
 	}
@@ -96,14 +96,14 @@ void mod_exit(void *this_fn, void *call_site)
 					 ->lookup(addr);
 
 		if ( likely(sym != NULL) ) {
-			string msg("%s: %s called @ %p", name, sym, call_site);
-			util::dbg_info(msg.cstring());
+			string msg("%s: %s called @ %p\n", name, sym, call_site);
+			std::cout << msg;
 		}
 
 		else {
 #ifdef WITH_UNRESOLVED
-			string msg("%s: %p called @ %p", name, this_fn, call_site);
-			util::dbg_info(msg.cstring());
+			string msg("%s: %p called @ %p\n", name, this_fn, call_site);
+			std::cout << msg;
 #endif
 		}
 	}
