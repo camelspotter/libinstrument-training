@@ -34,6 +34,69 @@ void usage(i32 argc, i8 **argv)
 }
 
 
+void begin(void*, void*) __attribute((no_instrument_function));
+
+/* Instrumentation begin callback */
+void begin(void *this_fn, void *call_site)
+{
+	tracer *iface = tracer::interface();
+	if ( unlikely(iface == NULL) ) {
+		return;
+	}
+
+	try {
+		mem_addr_t addr = reinterpret_cast<mem_addr_t> (this_fn);
+
+		const i8 *nm = iface->proc()->lookup(addr);
+		if ( likely(nm != NULL) ) {
+			string msg("inline plugin: %s called @ %p", nm, call_site);
+			std::cout << msg << std::endl;
+		}
+	}
+
+	/*
+	 * In non instrumented code sections, like the above (all called functions are
+	 * not instrumented) you don't need to create stack traces or unwind the
+	 * simulated stack
+	 */
+	catch (exception &x) {
+		std::cerr << x;
+	}
+	catch (std::exception &x) {
+		std::cerr << x;
+	}
+}
+
+
+void end(void*, void*) __attribute((no_instrument_function));
+
+/* Instrumentation end callback */
+void end(void *this_fn, void *call_site)
+{
+	tracer *iface = tracer::interface();
+	if ( unlikely(iface == NULL) ) {
+		return;
+	}
+
+	try {
+		mem_addr_t addr = reinterpret_cast<mem_addr_t> (this_fn);
+
+		const i8 *nm = iface->proc()->lookup(addr);
+		if ( likely(nm != NULL) ) {
+			string msg("inline plugin: %s returns @ %p", nm, call_site);
+			std::cout << msg << std::endl;
+		}
+	}
+
+	catch (exception &x) {
+		std::cerr << x;
+	}
+	catch (std::exception &x) {
+		std::cerr << x;
+	}
+}
+
+
 void load_interceptor() __attribute((no_instrument_function));
 
 void load_interceptor()
@@ -67,7 +130,7 @@ void load_interceptor()
 			break;
 
 		case 2:
-			;
+			iface->add_plugin(begin, end);
 		}
 	}
 	catch (exception &x) {
