@@ -96,13 +96,13 @@ void mod_exit(void *this_fn, void *call_site)
 					 ->lookup(addr);
 
 		if ( likely(sym != NULL) ) {
-			string msg("%s: %s called @ %p\n", name, sym, call_site);
+			string msg("%s: %s returned @ %p\n", name, sym, call_site);
 			std::cout << msg;
 		}
 
 		else {
 #ifdef WITH_UNRESOLVED
-			string msg("%s: %p called @ %p\n", name, this_fn, call_site);
+			string msg("%s: %p returned @ %p\n", name, this_fn, call_site);
 			std::cout << msg;
 #endif
 		}
