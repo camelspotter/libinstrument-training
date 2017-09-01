@@ -36,7 +36,6 @@ SET(CMAKE_INSTALL_PREFIX /usr/local CACHE PATH "installation prefix" FORCE)
 
 
 # Fixed primary option definitions
-
 # Dynamic option definitions
 
 

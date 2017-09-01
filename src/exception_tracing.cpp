@@ -186,6 +186,9 @@ i32 main(i32 argc, i8 **argv)
 	 */
 	const i8 *nm = NULL;
 	try {
+		properties p;
+		p.deserialize();
+
 		/*
 		 * Set the thread name for easy identification. This should better be set in
 		 * process constructors, in real life programs
@@ -241,15 +244,9 @@ i32 main(i32 argc, i8 **argv)
 	 */
 	iface->unwind();
 
-	iface->proc()
-			 ->fork_thread("thread-1", level0, (void*) "test_arg_1");
+	thread *t = thread::fork("thread-1", level0, (void*) "test_arg_1");
 
-	thread *t =
-		iface->proc()
-				 ->get_thread("thread-1");
-
-	iface->proc()
-			 ->thread_join(t);
+	t->join();
 
 	delete[] nm;
 	return EXIT_SUCCESS;

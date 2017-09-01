@@ -2,7 +2,7 @@
 
 using namespace instrument;
 
-namespace instrument_extra {
+namespace instrument_mod_test {
 
 const i8 *name = "libmod_test.so";
 
@@ -57,10 +57,10 @@ void mod_enter(void *this_fn, void *call_site)
 		}
 
 		else {
-#ifdef WITH_UNRESOLVED
+//#ifdef WITH_UNRESOLVED
 			string msg("%s: %p called @ %p\n", name, this_fn, call_site);
 			std::cout << msg;
-#endif
+//#endif
 		}
 	}
 
@@ -101,10 +101,10 @@ void mod_exit(void *this_fn, void *call_site)
 		}
 
 		else {
-#ifdef WITH_UNRESOLVED
+//#ifdef WITH_UNRESOLVED
 			string msg("%s: %p returned @ %p\n", name, this_fn, call_site);
 			std::cout << msg;
-#endif
+//#endif
 		}
 	}
 	catch (exception &x) {

@@ -60,6 +60,8 @@ void usage(i32 argc, i8 **argv)
  */
 void sighandler(i32 signo)
 {
+	util::dbg_info("Caught signal %d (%s)", signo, strsignal(signo));
+
 	if (signo == SIGCHLD) {
 		pid_t pid;
 		i32 status;
@@ -429,20 +431,10 @@ i32 main(i32 argc, i8 **argv)
 
 	/* Create and start a new thread */
 	string arg("test_arg_1::%d", getpid());
-	iface->proc()
-			 ->fork_thread("thread-1", level0, (void*) arg.cstring());
+	thread *t1 = thread::fork("thread-1", level0, (void*) arg.cstring());
 
 	arg.set("test_arg_2::%d", getpid());
-	iface->proc()
-			 ->fork_thread("thread-2", busy, (void*) arg.cstring());
-
-	thread *t1 =
-		iface->proc()
-				 ->get_thread("thread-1");
-
-	thread *t2 =
-		iface->proc()
-				 ->get_thread("thread-2");
+	thread *t2 = thread::fork("thread-2", busy, (void*) arg.cstring());
 
 	/*
 	 * Catch and handle an exception. If you need libinstrument to produce the
@@ -502,11 +494,8 @@ i32 main(i32 argc, i8 **argv)
 	iface->unwind();
 
 	is_busy = false;
-	iface->proc()
-			 ->thread_cancel(t2);
-
-	iface->proc()
-			 ->thread_join(t1, NULL);
+	t2->cancel();
+	t1->join();
 
 	delete[] nm;
 	return EXIT_SUCCESS;

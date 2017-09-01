@@ -35,7 +35,7 @@ void usage(i32 argc, i8 **argv)
 		<< "\t 3. Log exception trace to syntax highlighter"
 		<< std::endl
 		<< std::endl
-		
+
 		<< "\t 4. Log exception trace to low-constrast syntax highlighter"
 		<< std::endl
 		<< std::endl;
@@ -126,11 +126,11 @@ string* log_to_highlighter(bool is_low_contrast)
 			s->set_fgcolor(13);
 			s->set_attr_enabled(style::BOLD, true);
 		}
-		
+
 		iface->trace(*p);
 		p->append("\n");
 		string * retval = p->highlight();
-		
+
 		if (is_low_contrast) {
 			delete p;
 		}
@@ -147,7 +147,7 @@ string* log_to_highlighter(bool is_low_contrast)
 	if (is_low_contrast) {
 		delete p;
 	}
-		
+
 	return NULL;
 }
 
@@ -171,7 +171,7 @@ string* log_to_idp_server(exception *x)
 		}
 
 		else {
-			i32 port = g_idp_port;
+			i32 port = g_idp_tcp_port;
 			if ( likely(peer_info->size() > 1) ) {
 				port = atoi(peer_info->at(1)->cstring());
 			}
@@ -353,7 +353,7 @@ i32 main(i32 argc, i8 **argv)
 		case 3:
 			trace = log_to_highlighter(false);
 			break;
-		
+
 		case 4:
 			trace = log_to_highlighter(true);
 		}

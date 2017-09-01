@@ -231,14 +231,21 @@ i32 main(i32 argc, i8 **argv)
 				 ->current_thread()
 				 ->set_name("main");
 
-		srand(time(NULL) + selector);
-		i32 times = rand() % 9;
-		if ( unlikely(times == 0) ) {
-			times = 1;
+		i32 repetitions = 1;
+		if ( unlikely(selector == 1) ) {
+			srand(time(NULL) + selector);
+			repetitions = rand() % 9;
+
+			if ( unlikely(repetitions == 0) ) {
+				repetitions = 1;
+			}
 		}
 
-		std::cout << times << std::endl;
-		for (i32 i = 0; likely(i < times); i++) {
+		std::cout	<< "Random repetitions: "
+							<< repetitions
+							<< std::endl;
+
+		for (i32 i = 0; likely(i < repetitions); i++) {
 			level1(i);
 			level2(i);
 			level3(i);
